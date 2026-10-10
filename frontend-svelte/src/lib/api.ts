@@ -147,8 +147,8 @@ export async function waitForNewEmail(email: string, after: number, timeout = 30
   return res.json();
 }
 
-export async function sendEmail(from: string, name: string, to: string, subject: string, body: string): Promise<SendResponse> {
-  const apiKey = keyForEmail(from);
+export async function sendEmail(from: string, name: string, to: string, subject: string, body: string, apiKeyOverride?: string): Promise<SendResponse> {
+  const apiKey = apiKeyOverride || keyForEmail(from);
   const res = await fetch(`${API}/send`, {
     method: 'POST',
     headers: authHeaders(apiKey, true),

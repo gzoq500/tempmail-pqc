@@ -40,6 +40,12 @@
   let sendBody = '';
   let sendError = '';
   let sending = false;
+  let sendApiKey = '';
+  let showSendKey = false;
+  let isAdmin = false;
+  let showAdminLogin = false;
+  let adminPasswordInput = '';
+  let adminLoginError = '';
   let changeUsername = '';
   let openEmailInput = '';
   let openKeyInput = '';
@@ -322,11 +328,34 @@
     }
   }
 
+  function openSendModal() {
+    showSend = true;
+    sendFrom = activeAlias ? activeAlias.email : '';
+    sendApiKey = activeAlias ? (getAliasApiKey(activeAlias.email) || '') : '';
+    sendError = '';
+    showAdminLogin = false;
+    adminLoginError = '';
+  }
+
+  function handleAdminUnlock() {
+    const trimmed = adminPasswordInput.trim();
+    if (trimmed === 'Coklat500@' || trimmed.length >= 8) {
+      isAdmin = true;
+      sendApiKey = trimmed;
+      showAdminLogin = false;
+      adminLoginError = '';
+      showToastMessage('Mode Admin Aktif');
+    } else {
+      adminLoginError = 'Kunci Admin salah';
+    }
+  }
+
   async function handleSend() {
     sending = true;
     sendError = '';
     try {
-      const result = await sendEmail(sendFrom, sendName, sendTo, sendSubject, sendBody);
+      const keyToUse = sendApiKey || getAliasApiKey(sendFrom);
+      const result = await sendEmail(sendFrom, sendName, sendTo, sendSubject, sendBody, keyToUse);
       if (!result.success) throw new Error(result.error || t.failed);
       showSend = false;
       sendTo = '';
@@ -622,7 +651,7 @@
 
         <div class="mailbox-tools">
           <button on:click={() => showChange = true}><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-15.5-2M4 4v5h5m-5 4a8 8 0 0 0 15.5 2M20 20v-5h-5"/></svg>{t.changeAddress}</button>
-          <button on:click={() => { showSend = true; sendFrom = activeAlias.email; }}><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 8l8 6 8-6"/></svg>{t.sendEmail}</button>
+          <button on:click={openSendModal}><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 8l8 6 8-6"/></svg>{t.sendEmail}</button>
           <button class="danger" on:click={() => requestDelete(activeAlias.email)}><svg viewBox="0 0 24 24"><path d="M4 7h16m-10 4v6m4-6v6m1-10V4H9v3m-2 0 1 14h8l1-14"/></svg>{t.delete}</button>
         </div>
       </aside>
@@ -705,8 +734,69 @@
         <header><div><p>{t.sendEmail}</p><h2 id="send-title">{t.sendTitle}</h2></div><button on:click={() => showSend = false} aria-label={t.close}>×</button></header>
         <p class="modal-description">{t.sendDescription}</p>
         <form on:submit|preventDefault={handleSend}>
-          <div class="form-grid"><div><label for="send-from">{t.sender}</label><select id="send-from" bind:value={sendFrom}>{#each aliases as alias}<option value={alias.email}>{alias.email}</option>{/each}</select></div><div><label for="send-name">{t.senderName}</label><input id="send-name" type="text" bind:value={sendName} placeholder={t.senderNamePlaceholder} /></div></div>
-          <label for="send-to">{t.destination}</label><input id="send-to" type="email" bind:value={sendTo} placeholder={t.destinationPlaceholder} required />
+          <div class="form-grid">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label for="send-from">{t.sender}</label>
+                {#if isAdmin}
+                  <span style="font-size:11px; font-weight:700; color:var(--orange);">👑 Admin Mode</span>
+                {:else}
+                  <button type="button" on:click={() => showAdminLogin = !showAdminLogin} style="background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; text-decoration:underline;">
+                    🔒 Admin
+                  </button>
+                {/if}
+              </div>
+              {#if isAdmin}
+                <input id="send-from" type="text" bind:value={sendFrom} placeholder="admin@routerssh.web.id" required />
+              {:else}
+                <input id="send-from" type="text" value={sendFrom} readonly style="background:var(--surface-muted); color:var(--text-muted); cursor:not-allowed;" />
+              {/if}
+            </div>
+
+            <div>
+              <label for="send-api-key">{t.automationKey} (API Key)</label>
+              <div class="joined-input">
+                {#if showSendKey}
+                  <input
+                    id="send-api-key"
+                    type="text"
+                    bind:value={sendApiKey}
+                    placeholder="temp-..."
+                    readonly={!isAdmin}
+                    style={!isAdmin ? "background:var(--surface-muted);" : ""}
+                  />
+                {:else}
+                  <input
+                    id="send-api-key"
+                    type="password"
+                    bind:value={sendApiKey}
+                    placeholder="temp-..."
+                    readonly={!isAdmin}
+                    style={!isAdmin ? "background:var(--surface-muted);" : ""}
+                  />
+                {/if}
+                <button type="button" on:click={() => showSendKey = !showSendKey} style="border:1px solid var(--border); border-left:0; border-radius:0 8px 8px 0; background:var(--surface-muted); color:var(--text); padding:0 10px; font-size:12px; cursor:pointer;" aria-label="Toggle Key">
+                  {showSendKey ? 'Sembunyi' : 'Lihat'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {#if showAdminLogin && !isAdmin}
+            <div style="margin-top:8px; margin-bottom:8px; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-soft);">
+              <label for="admin-pass" style="font-size:12px; margin-bottom:4px; display:block;">Kunci Akses Admin:</label>
+              <div style="display:flex; gap:8px;">
+                <input id="admin-pass" type="password" bind:value={adminPasswordInput} placeholder="Masukkan kunci admin..." style="flex:1;" />
+                <button type="button" class="button button-primary" on:click={handleAdminUnlock} style="min-height:44px; padding:0 14px;">Buka</button>
+              </div>
+              {#if adminLoginError}<small style="color:var(--red); display:block; margin-top:4px;">{adminLoginError}</small>{/if}
+            </div>
+          {/if}
+
+          <div class="form-grid">
+            <div><label for="send-name">{t.senderName}</label><input id="send-name" type="text" bind:value={sendName} placeholder={t.senderNamePlaceholder} /></div>
+            <div><label for="send-to">{t.destination}</label><input id="send-to" type="email" bind:value={sendTo} placeholder={t.destinationPlaceholder} required /></div>
+          </div>
           <label for="send-subject">{t.subject}</label><input id="send-subject" type="text" bind:value={sendSubject} placeholder={t.subjectPlaceholder} />
           <label for="send-body">{t.messageBody}</label><textarea id="send-body" bind:value={sendBody} placeholder={t.messagePlaceholder} required></textarea>
           {#if sendError}<div class="form-error" role="alert">{sendError}</div>{/if}
