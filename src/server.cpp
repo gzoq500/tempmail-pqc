@@ -97,6 +97,48 @@ bool write_all(int fd, const std::string& data) {
     return true;
 }
 
+int send_via_brevo_api(const std::string& from_name, const std::string& from_email,
+                       const std::string& to_email, const std::string& subject,
+                       const std::string& body, const std::string& api_key) {
+    json payload = {
+        {"sender", {{"name", from_name.empty() ? from_email : from_name}, {"email", from_email}}},
+        {"to", json::array({{{"email", to_email}}})},
+        {"subject", subject},
+        {"textContent", body}
+    };
+    std::string payload_str = payload.dump();
+
+    int input_pipe[2];
+    if (pipe(input_pipe) != 0) return -1;
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(input_pipe[0]); close(input_pipe[1]);
+        return -1;
+    }
+    if (pid == 0) {
+        dup2(input_pipe[0], STDIN_FILENO);
+        close(input_pipe[0]); close(input_pipe[1]);
+        const std::string auth_header = "api-key: " + api_key;
+        const char* argv[] = {
+            "curl", "-s", "-f", "-m", "15",
+            "-X", "POST", "https://api.brevo.com/v3/smtp/email",
+            "-H", auth_header.c_str(),
+            "-H", "Content-Type: application/json",
+            "-H", "Accept: application/json",
+            "--data-binary", "@-",
+            nullptr
+        };
+        execvp("curl", const_cast<char* const*>(argv));
+        _exit(127);
+    }
+    close(input_pipe[0]);
+    bool wrote = write_all(input_pipe[1], payload_str);
+    close(input_pipe[1]);
+    int status = 0;
+    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {}
+    return wrote && WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
+}
+
 int send_via_sendmail(const std::string& from, const std::string& to, const std::string& message) {
     int input_pipe[2];
     if (pipe(input_pipe) != 0) return -1;
@@ -641,8 +683,15 @@ void TempMailServer::start() {
                                   + "\r\n"
                                   + body;
 
-            // Send directly to sendmail stdin without invoking a shell or temp file.
-            int ret = send_via_sendmail(from_email, to, email_msg);
+            // Send via Brevo HTTPS REST API (Port 443) if BREVO_API_KEY is configured,
+            // otherwise fall back to local sendmail/msmtp.
+            int ret = -1;
+            const char* brevo_key = std::getenv("BREVO_API_KEY");
+            if (brevo_key && *brevo_key) {
+                ret = send_via_brevo_api(from_name, from_email, to, subject, body, brevo_key);
+            } else {
+                ret = send_via_sendmail(from_email, to, email_msg);
+            }
 
             if (ret == 0) {
                 std::cout << "[SEND] Message sent." << std::endl;
