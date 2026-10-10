@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Buat alamat email sementara tanpa registrasi dan terima pesan langsung di browser.">
+  <meta name="theme-color" content="#f4efe6">
+  <script>
+    (() => {
+      try {
+        const value = localStorage.getItem('tempmail.theme');
+        document.documentElement.dataset.theme = value === 'light' || value === 'dark' ? value : 'system';
+      } catch {
+        document.documentElement.dataset.theme = 'system';
+      }
+    })();
+  </script>
+  <title>TempMail | Email sementara tanpa registrasi</title>
+  <link rel="icon" type="image/svg+xml" href="/tempmail-logo-orange.svg">
+  <link rel="apple-touch-icon" href="/tempmail-logo-orange.svg">
+  <script type="module" crossorigin src="/assets/index-Bx1J0U2r.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CX3KwxRr.css">
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>

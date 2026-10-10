@@ -1,0 +1,6 @@
+.git
+.github
+*.tar.gz
+*.zip
+build/
+node_modules/
