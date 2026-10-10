@@ -27,6 +27,8 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     ca-certificates \
     curl \
+    msmtp \
+    msmtp-mta \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -34,6 +36,8 @@ WORKDIR /app
 COPY --from=builder /build/build/tempmail-server /app/app
 COPY dist/ /app/dist/
 COPY data/ /app/data/
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 ENV PORT=8080
 ENV TEMPMAIL_PORT=8080
@@ -44,4 +48,5 @@ ENV TEMPMAIL_STATIC_DIR=/app/dist
 
 EXPOSE 8080
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["/app/app"]
