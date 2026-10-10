@@ -353,7 +353,6 @@ void TempMailServer::start() {
 
         // Inbox listings are metadata-only; bodies load per email on open.
         auto emails = db_.get_emails(alias->id, after, req.has_param("full"));
-        std::cout << "[EMAILS] " << email << " -> " << emails.size() << " emails found" << std::endl;
         db_.mark_alias_read(alias->id);
 
         json arr = json::array();
@@ -592,7 +591,7 @@ void TempMailServer::start() {
                 ++email_event_version_;
             }
             email_event_.notify_all();
-            std::cout << "[INCOMING] " << from << " -> " << to << " (" << subject << ") id=" << id << std::endl;
+            std::cout << "[INCOMING] Message processed and encrypted." << std::endl;
 
             res.set_content(R"({"success":true})", "application/json");
         } catch (const std::exception&) {
@@ -646,7 +645,7 @@ void TempMailServer::start() {
             int ret = send_via_sendmail(from_email, to, email_msg);
 
             if (ret == 0) {
-                std::cout << "[SEND] " << from_email << " -> " << to << " (" << subject << ")" << std::endl;
+                std::cout << "[SEND] Message sent." << std::endl;
                 json resp = {{"success", true}, {"message", "Email sent successfully"}};
                 res.set_content(resp.dump(), "application/json");
             } else {
