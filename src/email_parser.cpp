@@ -38,10 +38,10 @@ std::string quoted_printable_decode(const std::string& input) {
             } else if (input[i+1] == '\n') {
                 i += 1;
             } else {
-                // Only decode =XX where XX are UPPERCASE hex (standard QP)
+                // Decode =XX hex (both uppercase and lowercase hex)
                 char h1 = input[i+1], h2 = input[i+2];
-                bool isHex = ((h1>='0'&&h1<='9')||(h1>='A'&&h1<='F')) &&
-                             ((h2>='0'&&h2<='9')||(h2>='A'&&h2<='F'));
+                bool isHex = std::isxdigit(static_cast<unsigned char>(h1)) &&
+                             std::isxdigit(static_cast<unsigned char>(h2));
                 if (isHex) {
                     std::string hex = input.substr(i+1, 2);
                     char c = (char)std::stoi(hex, nullptr, 16);

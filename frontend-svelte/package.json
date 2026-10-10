@@ -1,0 +1,21 @@
+{
+  "name": "tempmail-svelte",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "svelte": "^4.2.19",
+    "vite": "^5.4.21"
+  }
+}
