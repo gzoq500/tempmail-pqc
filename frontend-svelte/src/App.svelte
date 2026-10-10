@@ -695,8 +695,16 @@
   {/if}
 
   <footer class="site-footer">
-    <span class="footer-brand">TempMail · RouterSSH</span>
-    <div class="footer-meta"><a href="/docs">{t.apiDocs}</a><span>{locale === 'id' ? 'Alamat sementara, gratis untuk semua orang.' : 'Temporary address, free for everyone.'}</span></div>
+    <div class="footer-content">
+      <div class="footer-top">
+        <span class="footer-brand">TempMail · RouterSSH</span>
+        <span class="footer-dot">•</span>
+        <a href="/docs" class="footer-link">{t.apiDocs}</a>
+      </div>
+      <p class="footer-subtext">
+        {locale === 'id' ? 'Alamat sementara, gratis untuk semua orang.' : 'Temporary address, free for everyone.'}
+      </p>
+    </div>
   </footer>
 
   {#if showOpen}
